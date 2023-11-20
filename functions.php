@@ -146,9 +146,11 @@ function wandercrm_scripts() {
 	wp_enqueue_style('wandercrm-bootstrap-css', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css', array(), _S_VERSION, 'all');
 	wp_enqueue_style('wandercrm-dataTables-bootstrap4-css', 'https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css', array(), _S_VERSION, 'all');
 	wp_enqueue_style('wandercrm-fonts-boxicons', get_template_directory_uri() . '/fonts/boxicons.css', array(), _S_VERSION, 'all');
+	wp_enqueue_style('select2-min-css', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', array(), _S_VERSION, 'all');
 	wp_enqueue_style('wandercrm-fonts-roboto', 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap', array(), _S_VERSION, 'all');
 	wp_enqueue_style('wandercrm-fonts-oswald', 'https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap', array(), _S_VERSION, 'all');
 	wp_enqueue_style('flatpickr-min-css', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', array(), _S_VERSION, 'all');
+
 
 	//wp_style_add_data( 'wandercrm-style', 'rtl', 'replace' );
 
@@ -160,6 +162,7 @@ function wandercrm_scripts() {
 	wp_enqueue_script( 'wandercrm-jquery-dataTables-min-js', 'https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js', array(), _S_VERSION, false );
 	wp_enqueue_script( 'wandercrm-dataTables-bootstrap4-js', 'https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js', array(), _S_VERSION, false );
 	wp_enqueue_script('flatpickr-datepicker', 'https://cdn.jsdelivr.net/npm/flatpickr', array('jquery'), _S_VERSION, true);
+	wp_enqueue_script('select2-min-js', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', array('jquery'), _S_VERSION, true);
 	wp_enqueue_script( 'kit-fontawesome-com', 'https://kit.fontawesome.com/267ba2d474.js', array(), _S_VERSION, false );
 	wp_enqueue_script( 'wandercrm-helpers', get_template_directory_uri() . '/assets/js/helpers.js', array(), _S_VERSION, false );
 	wp_enqueue_script( 'wandercrm-bootstrap', get_template_directory_uri() . '/assets/js/bootstrap.js', array(), _S_VERSION, true );
@@ -223,7 +226,7 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 // Login administrator to redirect invoice list page ====================
 function custom_login_redirect($redirect_to, $request, $user) {
 	
-    if (isset($user->roles) && is_array($user->roles) && in_array('administrator', $user->roles)) {
+    if (isset($user->roles) && is_array($user->roles) && in_array('crm_admin', $user->roles)) {
         return home_url('/invoice-list/');
     }
 
@@ -238,20 +241,22 @@ function wandercrm_login(){
 
 	if( isset( $_POST['wander_login'] ) ){
 
-      if( wp_verify_nonce( $_POST['wander_login'], 'wandercrm_action' ) ){
-        $user_mail = $_POST['user_email'];
+      if( wp_verify_nonce( $_POST['wander_login'], 'wandercrm_action' ) ){        
+        $user_name = $_POST['user_name'];
         $user_pass = $_POST['user_password'];
+
+        //$user_mail = $_POST['user_email'];
         // $user_meta = get_user_by('email', $user_mail);
         // $user_login_meta = get_user_meta( $user_meta->data->ID, 'user_login_status' );
 
-        if ( !email_exists($user_mail) ) {
-          echo "Email address is not exist";
+        if ( !username_exists($user_name) ) {
+          echo "User name is not exist";
         }elseif( empty($user_pass) ){
           echo "Password field is empty";
         }else{
 
           $user = wp_signon( array(
-                'user_login' => $user_mail,
+                'user_login' => $user_name,
                 'user_password' => $user_pass,
                 'remember' => true
               ), false );
@@ -330,10 +335,13 @@ function wandercrm_invoice_modal(){
 	$invoice_table = $wpdb->prefix . 'invoice';
 	$tr_items = '';
 	$tableInvoiceItem = $wpdb->prefix . 'invoice_items';
-	$invoice_ids = $_POST['invoice_ids'];
+	$invoice_ids = $_POST['invoice_ids'];	
 
 	$invoice_details = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $invoice_table WHERE ID=%d", $invoice_ids ), ARRAY_A );
-
+	$user = get_userdata($invoice_details['user_id']);
+	$user_roles = $user->roles;
+	$invoice_details['role'] = $user_roles[0];
+	
 	$invoice_items = $wpdb->get_results($wpdb->prepare( "SELECT * FROM $tableInvoiceItem WHERE invoice_id=%d", $invoice_details['ID'] ), ARRAY_A);
 	$total_amount = 0;	
 	$tax_amount = 0;
@@ -559,3 +567,69 @@ function register_custom_api_routes() {
     ) );
 }
 add_action( 'rest_api_init', 'register_custom_api_routes' );
+
+
+//Do not show wp administrator role while loged in a CRM Admin ~~~~~
+if (current_user_can('administrator') === false) {
+    // Hide administrator users in the user list
+    add_action('pre_user_query', 'custom_hide_admin_users');
+    function custom_hide_admin_users($user_search) {
+        global $wpdb;
+
+        $user_search->query_where = str_replace(
+            'WHERE 1=1',
+            "WHERE 1=1 AND {$wpdb->users}.ID NOT IN (
+                SELECT {$wpdb->usermeta}.user_id FROM {$wpdb->usermeta}
+                WHERE {$wpdb->usermeta}.meta_key = '{$wpdb->prefix}capabilities'
+                AND {$wpdb->usermeta}.meta_value LIKE '%administrator%'
+            )",
+            $user_search->query_where
+        );
+    }
+}
+
+
+//Register Invoice list menu page in admin.~~~~~~~~~~
+function register_web_menu_page () {
+  global $menu;
+  $menu[9] = array (
+    'Invoice List', // menu title
+    'read', // capability
+    home_url('invoice-list'), // menu item url
+    null,
+    'menu-top menu-icon-generic toplevel_page_web_menu_page', // menu item class
+    'Invoice List', // page title
+    false // menu function
+  );
+}
+
+add_action( 'admin_menu', 'register_web_menu_page', 999);
+
+//Ajax callback function of client data in invoice form ~~~~~~~~~~
+function get_client_data(){
+	global $wpdb;	
+	$client_data = explode('_', $_POST['client_id']);	
+
+	if(is_array($client_data)){
+		$table = sanitize_text_field($client_data[0]);
+		$client_id = $client_data[1];
+
+	}else{
+		wp_send_json(array());
+	}
+
+	if($table == 'invoice'){
+		$tableName = $wpdb->prefix . $table;
+		$query = "SELECT * FROM $tableName WHERE ID=$client_id" ;
+
+	}elseif($table == 'receipt'){
+		$tableName = $wpdb->prefix . $table;
+		$query = "SELECT client_name, receipt_address as client_address, receipt_phone as client_phone  FROM $tableName WHERE ID=$client_id" ;
+	}
+
+    $results = $wpdb->get_row( $query , ARRAY_A);
+
+    wp_send_json($results);
+}
+add_action('wp_ajax_client_data_by_id', 'get_client_data');
+add_action('wp_ajax_nopriv_client_data_by_id', 'get_client_data');

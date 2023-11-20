@@ -237,12 +237,17 @@
 }
 
 
-
 .company-logo{
-    margin: 0 auto;
     max-width: 40%;
     height: auto;
     padding-bottom: 35px;
+    display: block;
+}
+.receipt-company-logo{
+    margin: 0 auto;
+    max-width: 40%;
+    height: auto;
+    padding-bottom: 5px;
     display: block;
 }
 
@@ -253,13 +258,16 @@
   font-weight: 500;
 
 }
-
+.inv-no, 
+.bill-dt{
+  margin-top: 20px;
+}
+.bill-dt{
+  text-align: right;
+}
 .wander-address, .wander-tel, .wander-mail, .wander-gstin, .wander-pan, .address, .tel, .mail, .gstin, .pan, .bill-dt, .inv-no{
-
   font-size: 14px;
-
   margin-bottom: 3px;
-
 }
 
 .address span, .tel span, .mail span, .gstin span, .pan span, .bill-dt span, .bill-dt span, .inv-no span{
@@ -347,6 +355,7 @@ h5.wander-nm{
   font-family: 'Oswald', sans-serif;
   font-size: 25px;
   font-weight: 400;
+  text-transform: uppercase;
 }
 
 ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
@@ -404,8 +413,39 @@ p.receipt-body{
 .invoice-generated-by p,
 .receipt-generater p{
   font-style: italic;
+  float: right;
+  margin-bottom: 3px;
 } 
 .invoice-generated-by p span,
 .receipt-generater p span{
   font-weight: 500;
+}
+.col-details h4,
+h4.inv-title {
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: underline;
+  margin-top: 10px;
+}
+.com-name{
+  text-align: right;
+}
+.com-name span{
+  font-weight: 500;
+}
+.user-title{
+  text-transform: uppercase;
+  color: #6e6e6e;
+}
+.select2-selection__rendered {
+    line-height: 34px !important;
+}
+.select2-container .select2-selection--single {
+    height: 38px !important;
+}
+.select2-selection__arrow {
+    height: 35px !important;
+}
+.custom-switch label{
+  cursor: pointer;
 }

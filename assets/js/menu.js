@@ -149,7 +149,7 @@ jQuery(document).ready(function(){
 
 
 
-//Preview button ajax in invoice list page ~~~~~~
+//Open Modal on click Preview button ajax in invoice list page ~~~~~~
   jQuery('.btn-inv-modal').click(function(){
     var invIds = jQuery(this).val();   
 
@@ -164,6 +164,7 @@ jQuery(document).ready(function(){
       success: function(response){
 
         let client_id               = response.ID;
+        let client_role             = response.role;
         let receipt_no              = response.receipt_no;
         let user_id                 = response.user_id;
         let client_name             = response.client_name;
@@ -191,45 +192,65 @@ jQuery(document).ready(function(){
         jQuery('.amount_in_word span').text(`${number_to_word_total}`);
         jQuery('.invoice-generated-by p span').text(`${invoice_generator}`);
 
-        if ( bank_name == 'hdfc' ) {
+        if ( client_role=='adventure_admin' || client_role=='adventure_subscriber' ) {
+
           jQuery('.payment-option-display').html(`
             <div class="account-details">
-                <p><span>Account Name:</span> WANDERVOGEL TOURS AND TRAVELS PVT LTD.</p> 
+                <p><span>Account Name:</span> WANDERVOGEL ADVENTURES</p> 
                 <p><span>Account Type:</span> Current Account</p> 
                 <p><span>Bank Name:</span> HDFC Bank</p> 
                 <p><span>Branch:</span> Ballygunge, Navjivan,1st Floor,54/1A Hazra Road, Kolkata-700019</p>
-                <p><span>Account No: </span>50200005928942</p> 
+                <p><span>Account No: </span>05162560001370</p> 
                 <p><span>RTGS/NEFT/IFSC Code: </span>HDFC0000516</p> 
                 <p><span>Swift Code: </span>HDFCINBBCAL</p> 
             </div>
           `);
 
-        }else if( bank_name == 'icici' ){
-          jQuery('.payment-option-display').html(`
-            <div class="account-details">
-                <p><span>Account Name:</span> WANDERVOGEL TOURS AND TRAVELS PVT LTD.</p> 
-                <p><span>Account Type:</span> Current Account</p> 
-                <p><span>Bank Name:</span> ICICI Bank</p> 
-                <p><span>Branch:</span> Ballygunge, Rishikesh,1/1 Asutosh Chowdhury Avenue, Kolkata-700019</p>
-                <p><span>Account No: </span>003405012275</p> 
-                <p><span>RTGS/NEFT/IFSC Code: </span>ICIC0000034</p> 
-                <p><span>Swift Code: </span>ICICINBBXXX</p> 
-            </div>
-          `);
-          
-        }else{
-          jQuery('.payment-option-display').html(`
-            <div class="account-details">
-                <p><span>Account Name:</span> WANDERVOGEL TOURS AND TRAVELS PVT LTD.</p> 
-                <p><span>Account Type:</span> Current Account</p> 
-                <p><span>Bank Name:</span> AXIS Bank Ltd.</p> 
-                <p><span>Branch:</span> Salt Lake, Kolkata (WB), BD-20, Sector I, Salt Lake City, Kolkata-700064</p>
-                <p><span>Account No: </span>917020058003025</p> 
-                <p><span>RTGS/NEFT/IFSC Code: </span>UTIB0000025</p> 
-                <p><span>Swift Code: </span>AXISINBB025</p> 
-            </div>
-          `);
-        }
+        }else if (client_role=='travel_admin' || client_role=='travel_subscriber') {
+
+            if ( bank_name == 'hdfc' ) {
+            jQuery('.payment-option-display').html(`
+              <div class="account-details">
+                  <p><span>Account Name:</span> WANDERVOGEL TOURS AND TRAVELS PVT LTD.</p> 
+                  <p><span>Account Type:</span> Current Account</p> 
+                  <p><span>Bank Name:</span> HDFC Bank</p> 
+                  <p><span>Branch:</span> Ballygunge, Navjivan,1st Floor,54/1A Hazra Road, Kolkata-700019</p>
+                  <p><span>Account No: </span>50200005928942</p> 
+                  <p><span>RTGS/NEFT/IFSC Code: </span>HDFC0000516</p> 
+                  <p><span>Swift Code: </span>HDFCINBBCAL</p> 
+              </div>
+            `);
+
+          }else if( bank_name == 'icici' ){
+            jQuery('.payment-option-display').html(`
+              <div class="account-details">
+                  <p><span>Account Name:</span> WANDERVOGEL TOURS AND TRAVELS PVT LTD.</p> 
+                  <p><span>Account Type:</span> Current Account</p> 
+                  <p><span>Bank Name:</span> ICICI Bank</p> 
+                  <p><span>Branch:</span> Ballygunge, Rishikesh,1/1 Asutosh Chowdhury Avenue, Kolkata-700019</p>
+                  <p><span>Account No: </span>003405012275</p> 
+                  <p><span>RTGS/NEFT/IFSC Code: </span>ICIC0000034</p> 
+                  <p><span>Swift Code: </span>ICICINBBXXX</p> 
+              </div>
+            `);
+            
+          }else{
+            jQuery('.payment-option-display').html(`
+              <div class="account-details">
+                  <p><span>Account Name:</span> WANDERVOGEL TOURS AND TRAVELS PVT LTD.</p> 
+                  <p><span>Account Type:</span> Current Account</p> 
+                  <p><span>Bank Name:</span> AXIS Bank Ltd.</p> 
+                  <p><span>Branch:</span> Salt Lake, Kolkata (WB), BD-20, Sector I, Salt Lake City, Kolkata-700064</p>
+                  <p><span>Account No: </span>917020058003025</p> 
+                  <p><span>RTGS/NEFT/IFSC Code: </span>UTIB0000025</p> 
+                  <p><span>Swift Code: </span>AXISINBB025</p> 
+              </div>
+            `);
+          }
+
+      }else{
+        console.log('No data found');
+      }        
 
         if (response) {
           jQuery('#exLargeModalPrev').modal('show');
@@ -289,10 +310,10 @@ jQuery(document).ready(function(){
           jQuery('.receipt-body').html(`Received with thanks from <span>${client_name}</span>,</br>of (Address) ${receipt_address}, </br> Phone no. <span>${receipt_phone}</span> </br>a sum of Rupees  <span>${receipt_amount}</span> (in word Rupees <span>${receipt_amount_in_word}</span> only) </br >by Cheque issued by Bank <span>${cheque_issued_br}</span>, Cheque no. <span>${cheque_no}</span> dated <span>${receipt_trans_dt}</span> payment received towards (<span>${package_booking}</span>), </br><span>${package_details}</span>`)
 
         }else if( payment_mode == 'neft' ){
-           jQuery('.receipt-body').html(`Received with thanks from <span>${client_name}</span>,</br>of (Address) ${receipt_address}, </br> Phone no. <span>${receipt_phone}</span> </br>a sum of Rupees  <span>${receipt_amount}</span> (in word Rupees <span>${receipt_amount_in_word}</span> only) </br>by NEFT/Transaction, <span>${neft_trans_br}</span> Transition ID <span>${neft_trans_id}</span> dated <span>${receipt_trans_dt}</span> payment received towards (<span>${package_booking}</span>), </br><span>${package_details}</span>`)
+           jQuery('.receipt-body').html(`Received with thanks from <span>${client_name}</span>,</br>of (Address) ${receipt_address}, </br> Phone no. <span>${receipt_phone}</span> </br>a sum of Rupees  <span>${receipt_amount}</span> (in word Rupees <span>${receipt_amount_in_word}</span> only) </br>by NEFT/Transaction, <span>${neft_trans_br}</span> Transaction ID <span>${neft_trans_id}</span> dated <span>${receipt_trans_dt}</span> payment received towards (<span>${package_booking}</span>), </br><span>${package_details}</span>`)
 
         }else{
-           jQuery('.receipt-body').html(`Received with thanks from <span>${client_name}</span>,</br>of (Address) ${receipt_address}, </br> Phone no. <span>${receipt_phone}</span> </br>a sum of Rupees  <span>${receipt_amount}</span> (in word Rupees <span>${receipt_amount_in_word}</span> only) </br>by Card, card no. <span>${card_no}</span>, name of card <span>${card_name}</span>, swipt no <span>${swipt_on}</span>, type of card <span>${card_type}</span>  payment received towards (<span>${package_booking}</span>), </br><span>${package_details}</span>`)
+           jQuery('.receipt-body').html(`Received with thanks from <span>${client_name}</span>,</br>of (Address) ${receipt_address}, </br> Phone no. <span>${receipt_phone}</span> </br>a sum of Rupees  <span>${receipt_amount}</span> (in word Rupees <span>${receipt_amount_in_word}</span> only) </br>by Card, card no. <span>${card_no}</span>, name of card <span>${card_name}</span>, swipt on <span>${swipt_on}</span>, type of card <span>${card_type}</span>  payment received towards (<span>${package_booking}</span>), </br><span>${package_details}</span>`)
         }
 
         if (response) {
@@ -523,62 +544,151 @@ if (jQuery('body').hasClass('page-template-invoice-list')) {
 
 
 // Invoice create Form validation ~~~~~~~~~~~~~~~~~~~
-  /*jQuery.validator.setDefaults({
-    debug: true,
-    success: "valid"
-  });
-
-  var invForm = jQuery( "#invoiceValid" );
-
-  invForm.validate({
-    rules: {
-      invoice_no: "required",
-      fin_yr: "required",
-      client_name: "required",
-      generated_fullname: "required",
-      client_phone: {
+  jQuery("#invoiceValid").validate({
+    rules: {      
+      invoice_no: {
         required: true,
-        number: true,
+        digits: true
+      },
+      fin_yr: {
+        required: true,
+      },
+      client_name: {
+        required: true,
+      },
+      exist_client_name: {
+        required: true,
+      },
+      client_address: {
+        required: true,
       },
       client_mail: {
         required: true,
         email: true
       },
+      client_phone: {
+        required: true,
+        digits: true,
+        minlength: 10,
+        maxlength: 10,
+      },
+      client_pan: {
+        required: true,
+      },
+      client_gst: {
+        required: true,
+      },
+      generated_fullname: {
+        required: true,
+      },
+      
+    },
+
+    messages: {
+      invoice_no: {
+        required: "Please enter invoice no.",
+        digits: "Please enter only digits",
+      },
+      fin_yr: {
+        required: "Please enter date of invoice",
+      },
       client_address: {
+        required: "Please enter the address",
+      },
+      client_mail: {
+        required: "Please enter your email address",
+        email: "Please enter a valid email address"
+      },
+      client_phone: {
+        required: "Please enter your phone no",
+        digits: "Please enter only digits",
+        minlength: "Your number must be exactly 10 digits long",
+        maxlength: "Your number must be exactly 10 digits long"
+      },
+      client_pan: {
+        required: "Please enter PAN no",
+      },
+      generated_fullname: {
+        required: "Please enter invoice generator name",
+      },
+
+    }
+  });
+
+
+  //Receipt create Form validation ~~~~~~~~~~~~~~~~~~~
+  jQuery("#receiptValid").validate({
+    rules: {      
+      receipt_no: {
+        required: true,
+        digits: true
+      },
+      receipt_date: {
+        required: true,
+      },  
+      client_name: {
+        required: true,
+      },   
+      exist_client_name: {
+        required: true,
+      },  
+      client_address: {
+        required: true,
+      }, 
+      client_phone: {
+        required: true,
+        digits: true,
+        minlength: 10,
+        maxlength: 10,
+      },
+      amount: {
+        required: true,
+        number: true
+      },
+      transaction_date: {
         required: true
       },
-      client_pan: "required",
-      client_gst: "required",
-      "invoice_tax[]": {
+      package_details: {
         required: true,
-      }
-    }
-  });*/
+      },
+      generated_name_receipt: {
+        required: true,
+      },
 
-/*var receiptForm = jQuery( "#receiptValid" );
-receiptForm.validate({
-  rules: {
-    receipt_no: "required",
-    receipt_date: "required",
-    client_name: "required",
-    client_phone: {
-      required: true,
-      number: true,
+      
     },
-    amount: {
-      required: true,
-      number: true,
-    },
-    client_address: {
-      required: true
-    },
-    payment_mode: "required",
-    transaction_date: "required",
-    package_booking: "required",
-    package_details: "required"
-  }
-});*/
-  
+
+    messages: {
+      receipt_no: {
+        required: "Please enter receipt no.",
+        digits: "Please enter only digits",
+      },
+      receipt_date: {
+        required: "Please enter date of receipt date",
+      },
+      client_address: {
+        required: "Please enter the address",
+      },
+      client_phone: {
+        required: "Please enter your phone no",
+        digits: "Please enter only digits",
+        minlength: "Your number must be exactly 10 digits long",
+        maxlength: "Your number must be exactly 10 digits long"
+      },
+      amount: {
+        required: "Please enter your amount",
+        number: "Please enter a valid number"
+      },
+      package_details: {
+        required: "Please type package details",
+      },
+      generated_name_receipt: {
+        required: "Please enter receipt generator name",
+      },
+
+
+    }
+  });
 
 
 //Tax checkbox validation ~~~~~~~~~~~~~~~~~~~~~
@@ -591,15 +701,9 @@ receiptForm.validate({
 //For enable TCS 20% checkbox ~~~~~
     jQuery("#tcs_tax20").change(function(){
       if( tcs_tax20.is(":checked") ){
-        // cgst_tax.prop("disabled", false);
-        // sgst_tax.prop("disabled", false);
-        // igst_tax.prop("disabled", false);
         tcs_tax5.prop({"disabled": true, "checked": false})
 
       }else{
-        // cgst_tax.prop("disabled", false);
-        // sgst_tax.prop("disabled", false);
-        // igst_tax.prop("disabled", false);
         tcs_tax5.prop("disabled", false);
       }     
     })
@@ -651,13 +755,62 @@ receiptForm.validate({
     })
 
 
-
   //Side Menu Dropdown with arrow change ~~~~~~~~~~~~~~~~~~
     jQuery(".menu-item").click(function() {
         var dropdownMenu = jQuery(this).siblings(".menu-sub");
         dropdownMenu.toggle();
         jQuery(this).toggleClass("open");
       });
+
+// Get Data from Create invoice form in select dropdown ~~~~~~~~~~~~~~~~~~
+    jQuery('#custom-select').select2({
+      placeholder: 'Select an name'
+    });
+
+    jQuery('#custom-select').on('change', function() {
+      var selectedID = jQuery(this).children(":selected").attr("id");
+
+        jQuery.ajax({
+          type: 'POST',
+          url: wandercrm.ajaxurl,
+          data: {
+            action: 'client_data_by_id',
+            client_id: selectedID
+          },
+          success: function(response) {
+            console.log(response);
+              var clientAddress =  response.client_address ? response.client_address : '' ;
+              var clientMail    =  response.client_mail ? response.client_mail : '';
+              var clientPan     =  response.client_pan ? response.client_pan : '';
+              var phoneNo       =  response.client_phone ? response.client_phone : '';
+              var clientGst      =  response.client_gst ? response.client_gst : '';
+
+              jQuery('#default-address').text(`${clientAddress}`);
+              jQuery('#default-email').val(`${clientMail}`);
+              jQuery('#default-pan').val(`${clientPan}`);
+              jQuery('#default-phone').val(`${phoneNo}`);
+              jQuery('#default-gst').val(`${clientGst}`);
+          }
+          
+        });
+    });
+
+
+  // Listen for switch button click
+    jQuery("#search-container, #select-containe").hide();
+    jQuery('#toggleSwitch').change( function() {
+
+      if (jQuery(this).is(":checked")) {
+          jQuery('#select-container').hide();
+          jQuery('#search-container').show();
+          jQuery("label[for='toggleSwitch']").text("New");
+
+      } else {      
+          jQuery('#search-container').hide();
+          jQuery('#select-container').show();
+          jQuery("label[for='toggleSwitch']").text("Existing");
+      }
+    });
 
 
 

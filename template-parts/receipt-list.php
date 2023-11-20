@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="col-md-4">
-                  <div class="btn-create-invoice py-3 mb-4 float-right">
+                  <div class="btn-create-invoice py-3 mb-4 mr-2 float-right">
                     <a href="<?php echo home_url('create-receipt');?>" class="btn rounded-pill btn-primary">Create Receipt</a>
                   </div>
                 </div>
@@ -120,7 +120,7 @@
                                   <th>Payment Mode</th>
                                   <th>Transaction Date</th>
                                   <th>Packages</th>
-                                  <?php echo (current_user_can('administrator') ) ? "<th>Users</th>" : ""; ?>
+                                  <?php echo ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ) ? "<th>Users</th>" : ""; ?>
                                   <th>Action</th>
                               </tr>
                           </thead>
@@ -128,9 +128,33 @@
                     <?php
                         $logedinUser = get_current_user_id();
 
-                        if (current_user_can('administrator') ){
+                        if ( current_user_can('administrator') ){
                           $receipts = $wpdb->get_results(( "SELECT * FROM $receipt_table"), ARRAY_A);
-                        }else{
+
+                        }elseif( current_user_can('adventure_admin') ){
+                          $adventure_admin_users = get_users(array(
+                                'role' => 'adventure_subscriber',
+                                'fields' => 'ID'
+                            ));
+
+                          $implode_users = implode(', ', $adventure_admin_users);
+                          $implode_users .= ', ' . $logedinUser;
+                          $receipts = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $receipt_table WHERE user_id IN ($implode_users)" ), ARRAY_A);
+
+                        }elseif ( current_user_can('travel_admin') ) {
+
+                            $travel_admin_users = get_users(array(
+                                'role' => 'travel_subscriber',
+                                'fields' => 'ID'
+                            ));
+
+                          $implode_users = implode(', ', $travel_admin_users);
+                          $implode_users .= ', ' . $logedinUser;
+
+                          $receipts = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $receipt_table WHERE user_id IN ($implode_users)" ), ARRAY_A);
+
+                          }else{
+
                           $receipts = $wpdb->get_results($wpdb->prepare( "SELECT * FROM $receipt_table WHERE user_id=%d", $logedinUser ), ARRAY_A);
                         }                         
 
@@ -156,7 +180,7 @@
                           <td><?php echo $transaction_date;?></td>
                           <td><?php echo $packages;?></td>
                       <?php
-                      if (current_user_can('administrator') ){ ?>
+                      if ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ){ ?>
                         <td> <?php echo get_userdata($user_id)->display_name; ?> </td>
                       <?php }?>
 
@@ -165,11 +189,13 @@
   <button type="button" class="dropdown-toggle list-action" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
 
   <ul class="dropdown-menu">
-    <li><button value="<?php echo $receipt_id; ?>" class="btn dropdown-item btn-receipt-modal" ><i class="fa-regular fa-eye"></i> Preview</button>
+    <li><button value="<?php echo $receipt_id; ?>" class="btn dropdown-item btn-receipt-modal" ><i class="fa-regular fa-eye"></i> Preview</button></li>
+    <li><a href="?action=edit&editId=<?php echo $receipt_id; ?>"class="btn dropdown-item"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
 
-    <li><a href="?action=edit&editId=<?php echo $receipt_id; ?>"class="btn dropdown-item"><i class="fa-regular fa-pen-to-square"></i> Edit</a>      
-
-    <li><a href="?action=delete&delId=<?php echo $receipt_id; ?>" class="btn dropdown-item" onClick="return confirm('Are you sure to want to delete?')"><i class="fa-regular fa-trash-can"></i> Delete</a>
+    <?php
+        if ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ){ ?>          
+          <li><a href="?action=delete&delId=<?php echo $receipt_id; ?>" class="btn dropdown-item" onClick="return confirm('Are you sure to want to delete?')"><i class="fa-regular fa-trash-can"></i> Delete</a></li>
+    <?php } ?>
 
   </ul>
 
@@ -188,7 +214,7 @@
                                   <th>Payment Mode</th>
                                   <th>Transaction Date</th>
                                   <th>Packages</th>
-                                  <?php echo (current_user_can('administrator') ) ? "<th>Users</th>" : ""; ?>
+                                  <?php echo ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ) ? "<th>Users</th>" : ""; ?>
                                   <th>Action</th>
                               </tr>
                           </tfoot>
@@ -241,8 +267,11 @@
                   float: left;
                 }*/
                 .col-amount{
-                  width: 35%;
+                  width: 55%;
                   float: left;
+                }
+                .col-amount p{
+                  margin-bottom: 3px;
                 }
               </style>
 
@@ -254,91 +283,164 @@
               <div class="inv-container">
                 <div style="display: -ms-flexbox; display: flex; -ms-flex-wrap: wrap; flex-wrap: wrap;">
                   <div style="width: 30%; float: left;">
-                    <p class="receipt-no">Receipt No.: WTTPL/INV/<span></span></p>
+                    <p class="receipt-no">Receipt No.: <?php echo ( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ) ? "WA" : "WTTPL"; ?>/MR/<span></span></p>
                   </div>
-                  <div style="width: 40%; float: left;">
-                    <img class="company-logo" src="https://wanderaccounts.in/wp-content/themes/wandercrm/assets/img/wandering.png">
-                  </div>
+                  <?php 
+                      if( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ){?>
+
+                        <div style="width: 40%; float: left;">
+                          <img class="receipt-company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wa-adventure-invoice.jpg'?>">
+                        </div>
+
+                      <?php }else{ ?>
+
+                        <div style="width: 40%; float: left;">
+                          <img class="receipt-company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wandering.png'?>">
+                        </div>
+
+                      <?php } ?>
+                  
                   <div style="width: 30%; float: left;">
                     <p class="receipt-dt">Date: <span></span></p>
                   </div>
-                </div>
+                </div>                
 
-                <div class="row justify-content-center">
+                <?php 
+                    if( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ){?>
+
+                  <div class="row justify-content-center">
                     <div class="company-details col-md-7 mb-0">                      
-                       <h5 class="wander-nm">WANDERVOGEL TOURS AND TRAVELS PVT. LTD.</h5>
-                       <p class="wander-address">1/2C, Ballygunge Place East, Kolkata, West Bengal 700019</p>
+                       <h5 class="wander-nm">Wandervogel Adventure</h5>
+                       <p class="wander-address">1/2C Ballygunge Place East, Kolkata, West Bengal 700019</p>
+                       <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
+                       <p class="wander-mail"><span>Mail:</span> indianwildtours@gmail.com</p>
+                       <p class="wander-gstin"><span>GSTIN:</span> 19AAAFW5966H1ZO</p>
+                       <p class="wander-pan"><span>PAN No.:</span> AAAFW5966H</p>
+                    </div>
+                  </div>
+
+                    <?php }else{ ?>
+
+                  <div class="row justify-content-center">
+                    <div class="company-details col-md-7 mb-0">                      
+                       <h5 class="wander-nm">Wandervogel Tours and Travels Pvt. Ltd</h5>
+                       <p class="wander-address">1/2C Ballygunge Place East, Kolkata, West Bengal 700019</p>
                        <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
                        <p class="wander-mail"><span>Mail:</span> wandervogeltours@gmail.com</p>
                        <p class="wander-gstin"><span>GSTIN:</span> 19AABCW5180F1Z7</p>
                        <p class="wander-pan"><span>PAN No.:</span> AABCW5180F</p>
                     </div>
                   </div>
+                      <?php } ?>
               </div>
 
               <div class="container">
-                <div class="row mt-4">
+                <div class="row">
                   <div class="col-details">
+                    <h4>Money Receipt</h4>
                     <p class="receipt-body"></p>
                   </div>
                 </div> 
 
-                <div class="row mt-4">
+                <div class="row">
                   <div class="col-amount">
                     <h5>Rs. <span class="receipt-amount"></span>/-</h5>
-                    <p>*Cheques are subject to realisation</p>
+                    <p>*Cheques are subject to realisation.</p>
+                    <p>*This is system generated receipt. Does not require a signature.</p>
                   </div>
 
+                  <?php
+                      $co_name = ( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ) ? 'Wandervogel Adventure' : 'Wandervogel Tours and Travels Pvt. Ltd.';
+                    ?>
+
                   <div class="receipt-generater">
-                    <p class="float-right">Invoice Generated by: <span></span></p>
+                    <p>Money Receipt Generated by: <span></span></p>                    
                   </div>
+                  <p class="com-name">For <span><?php echo $co_name;?></span></p>
                 </div>
               </div>
 
-                <div class="clone-receipt" style="display: none; margin-top: 45px;">
+                <div class="clone-receipt" style="display: none; margin-top: 25px;">
                   <div class="inv-container">
                     <div style="display: -ms-flexbox; display: flex; -ms-flex-wrap: wrap; flex-wrap: wrap;">
                       <div style="width: 30%; float: left;">
-                        <p class="receipt-no">Receipt No.: WTTPL/INV/<span></span></p>
+                        <p class="receipt-no">Receipt No.: WTTPL/MR/<span></span></p>
                       </div>
-                      <div style="width: 40%; float: left;">
-                        <img class="company-logo" src="https://wanderaccounts.in/wp-content/themes/wandercrm/assets/img/wandering.png">
-                      </div>
+                      <?php 
+                          if( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ){?>
+
+                            <div style="width: 40%; float: left;">
+                              <img class="receipt-company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wa-adventure-invoice.jpg'?>">
+                            </div>
+
+                          <?php }else{ ?>
+
+                            <div style="width: 40%; float: left;">
+                              <img class="receipt-company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wandering.png'?>">
+                            </div>
+
+                          <?php } ?>
+                      
                       <div style="width: 30%; float: left;">
                         <p class="receipt-dt">Date: <span></span></p>
                       </div>
-                    </div>
+                    </div>                
 
-                    <div class="row justify-content-center">
+                    <?php 
+                        if( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ){?>
+
+                      <div class="row justify-content-center">
                         <div class="company-details col-md-7 mb-0">                      
-                           <h5 class="wander-nm">WANDERVOGEL TOURS AND TRAVELS PVT. LTD.</h5>
-                           <p class="wander-address">1/2C, Ballygunge Place East, Kolkata, West Bengal 700019</p>
+                           <h5 class="wander-nm">Wandervogel Adventure</h5>
+                           <p class="wander-address">1/2C Ballygunge Place East, Kolkata, West Bengal 700019</p>
+                           <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
+                           <p class="wander-mail"><span>Mail:</span> indianwildtours@gmail.com</p>
+                           <p class="wander-gstin"><span>GSTIN:</span> 19AAAFW5966H1ZO</p>
+                           <p class="wander-pan"><span>PAN No.:</span> AAAFW5966H</p>
+                        </div>
+                      </div>
+
+                        <?php }else{ ?>
+
+                      <div class="row justify-content-center">
+                        <div class="company-details col-md-7 mb-0">                      
+                           <h5 class="wander-nm">Wandervogel Tours and Travels Pvt. Ltd</h5>
+                           <p class="wander-address">1/2C Ballygunge Place East, Kolkata, West Bengal 700019</p>
                            <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
                            <p class="wander-mail"><span>Mail:</span> wandervogeltours@gmail.com</p>
                            <p class="wander-gstin"><span>GSTIN:</span> 19AABCW5180F1Z7</p>
                            <p class="wander-pan"><span>PAN No.:</span> AABCW5180F</p>
                         </div>
                       </div>
+                          <?php } ?>
                   </div>
 
                   <div class="container">
-                    <div class="row mt-4">
+                    <div class="row">
                       <div class="col-details">
+                        <h4>Money Receipt</h4>
                         <p class="receipt-body"></p>
                       </div>
                     </div> 
 
-                    <div class="row mt-4">
+                    <div class="row">
                       <div class="col-amount">
                         <h5>Rs. <span class="receipt-amount"></span>/-</h5>
-                        <p>*Cheques are subject to realisation</p>
+                        <p>*Cheques are subject to realisation.</p>
+                        <p>*This is system generated receipt. Does not require a signature.</p>
                       </div>
 
+                      <?php
+                          $co_name = ( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ) ? 'Wandervogel Adventure' : 'Wandervogel Tours and Travels Pvt. Ltd.';
+                        ?>
+
                       <div class="receipt-generater">
-                        <p class="float-right">Invoice Generated by: <span></span></p>
+                        <p>Money Receipt Generated by: <span></span></p>                    
                       </div>
+                      <p class="com-name">For <span><?php echo $co_name;?></span></p>
                     </div>
                   </div>
+
                 </div>
             </div>            
           </div>

@@ -2,17 +2,30 @@
   <a class="menu-slide" href="javascript:void(0);"><i class="bx bx-menu bx-sm"></i></a>
 </div>
 
+
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme side-menu">
-  <div class="app-brand demo">
-    <img src="<?php echo get_template_directory_uri(). '/assets/img/wandering.png'?>">
-    <!-- <a href="index.html" class="app-brand-link">
-      <span class="app-brand-text demo menu-text fw-bolder ms-2">Sneat</span>
-    </a> -->
-  </div>
+
+  <?php 
+    if( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ){?>
+
+      <div class="app-brand demo">
+        <img src="<?php echo get_template_directory_uri(). '/assets/img/wa-adventure.jpg'?>">
+      </div>
+
+    <?php }else{ ?>
+
+      <div class="app-brand demo">
+        <img src="<?php echo get_template_directory_uri(). '/assets/img/wandering.png'?>">
+      </div>
+
+    <?php }
+  ?>
 
   <div class="menu-inner-shadow"></div>
-  <ul class="menu-inner py-1">            
+  <ul class="menu-inner py-1">           
+
     <!-- Layouts -->
+
     <li class="menu-item">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-layout"></i>
@@ -21,7 +34,6 @@
 
       <ul class="menu-sub">
         <li class="menu-item">
-
           <a href="<?php echo site_url('create-invoice') ?>" class="menu-link">
             <div data-i18n="Without menu">Create</div>
           </a>
@@ -34,6 +46,7 @@
       </ul>
     </li>
 
+
     <li class="menu-item">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-layout"></i>
@@ -42,7 +55,6 @@
 
       <ul class="menu-sub">
         <li class="menu-item">
-
           <a href="<?php echo site_url('create-receipt') ?>" class="menu-link">
             <div data-i18n="Without menu">Create</div>
           </a>
@@ -54,5 +66,23 @@
         </li>
       </ul>
     </li>
+
+    <?php
+      if (current_user_can('adventure_admin') || current_user_can('travel_admin') || current_user_can('administrator') ){ ?>
+          <li class="menu-item">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-layout"></i>
+              <div data-i18n="Layouts">Users</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item">
+                <a href="<?php echo site_url('/wp-admin/users.php') ?>" class="menu-link">
+                  <div data-i18n="Without menu">Edit</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+    <?php } ?>
+
   </ul>
 </aside>

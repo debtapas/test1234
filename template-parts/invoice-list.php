@@ -125,7 +125,7 @@
                                   <th>GST No.</th>
                                   <th>Type</th>
                                   <th>Date</th>
-                                  <?php echo (current_user_can('administrator') ) ? "<th>Users</th>" : ""; ?>
+                                  <?php echo ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ) ? "<th>Users</th>" : ""; ?>
                                   <th>Action</th>
                               </tr>
                           </thead>
@@ -140,7 +140,32 @@
                           if (current_user_can('administrator') ){ 
                             $invoices = $wpdb->get_results(( "SELECT * FROM $tableName"), ARRAY_A);
 
+                          }elseif ( current_user_can('adventure_admin') ) {
+
+                            $adventure_admin_users = get_users(array(
+                                'role' => 'adventure_subscriber',
+                                'fields' => 'ID'
+                            ));
+
+                          $implode_users = implode(', ', $adventure_admin_users);
+                          $implode_users .= ', ' . $logedinUser;
+
+                          $invoices = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $tableName WHERE user_id IN ($implode_users)" ), ARRAY_A);
+
+                          }elseif ( current_user_can('travel_admin') ) {
+
+                            $travel_admin_users = get_users(array(
+                                'role' => 'travel_subscriber',
+                                'fields' => 'ID'
+                            ));
+
+                          $implode_users = implode(', ', $travel_admin_users);
+                          $implode_users .= ', ' . $logedinUser;
+
+                          $invoices = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $tableName WHERE user_id IN ($implode_users)" ), ARRAY_A);
+
                           }else{
+                            
                             $invoices = $wpdb->get_results($wpdb->prepare( "SELECT * FROM $tableName WHERE user_id=%d", $logedinUser ), ARRAY_A);
                           }
 
@@ -170,7 +195,7 @@
                           <td><?php echo $type;?></td>
                           <td><?php echo $fin_yr;?></td>
                             <?php
-                            if (current_user_can('administrator') ){ ?>
+                            if ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ){ ?>
                               <td> <?php  echo get_userdata($user_id)->display_name; ?> </td>
                             <?php }?>
 
@@ -178,9 +203,14 @@
   <button type="button" class="dropdown-toggle list-action" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
 
   <ul class="dropdown-menu">
-    <li><button value="<?php echo $invoice_id; ?>" class="btn dropdown-item btn-inv-modal" ><i class="fa-regular fa-eye"></i> Preview</button>
-    <li><a href="?action=edit&editId=<?php echo $invoice_id; ?>"class="btn dropdown-item"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
-    <li><a href="?action=delete&delId=<?php echo $invoice_id; ?>" class="btn dropdown-item" onClick="return confirm('Are you sure to want to delete?')"><i class="fa-regular fa-trash-can"></i> Delete</a>
+    <li><button value="<?php echo $invoice_id; ?>" class="btn dropdown-item btn-inv-modal" ><i class="fa-regular fa-eye"></i> Preview</button></li>
+    <li><a href="?action=edit&editId=<?php echo $invoice_id; ?>"class="btn dropdown-item"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
+
+      <?php
+        if ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ){ ?>
+          <li><a href="?action=delete&delId=<?php echo $invoice_id; ?>" class="btn dropdown-item" onClick="return confirm('Are you sure to want to delete?')"><i class="fa-regular fa-trash-can"></i> Delete</a></li>
+      <?php } ?>
+    
   </ul>
 
                                     </td>
@@ -200,7 +230,7 @@
                               <th>GST No.</th>
                               <th>Type</th>
                               <th>Date</th>
-                              <?php echo (current_user_can('administrator') ) ? "<th>Users</th>" : ""; ?>
+                              <?php echo ( current_user_can('administrator') || current_user_can('adventure_admin') || current_user_can('travel_admin') ) ? "<th>Users</th>" : ""; ?>
                               <th>Action</th>
                           </tr>
                       </tfoot>
@@ -222,21 +252,52 @@
           <div class="modal-content">
             <div id="invoice-pdf">
             <div class="modal-header">
-              <h5 class="modal-title inv-no">Invoice No.: WTTPL/INV/<span></span></h5>
+              <div class="col-md-3">
+                <h5 class="modal-title inv-no">Invoice No.: <?php echo ( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ) ? "WA" : "WTTPL"; ?>/INV/<span></span></h5>
+              </div>              
+              <div class="col-md-6">                
+                <h4 class="inv-title">Invoice</h4>
+              </div>  
+              <div class="col-md-3">
+                <h5 class="bill-dt">Date: <span></span></h5>
+              </div>         
+
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <div class="container">
+                <?php
+                  $co_name = ( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ) ? 'Wandervogel Adventure' : 'Wandervogel Tours and Travels Pvt. Ltd.';
+                ?>
                 <div class="row g-2">
-                    <div class="col-6 mb-0">
-                       <img class="company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wandering.png'?>">
-                       <h5 class="wander-nm">WANDERVOGEL TOURS AND TRAVELS PVT. LTD.</h5>
-                       <p class="wander-address">1/2C, Ballygunge Place East, Kolkata, West Bengal 700 019</p>
-                       <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
-                       <p class="wander-mail"><span>Mail:</span> wandervogeltours@gmail.com</p>
-                       <p class="wander-gstin"><span>GSTIN:</span> 19AABCW5180F1Z7</p>
-                       <p class="wander-pan"><span>PAN No.:</span> AABCW5180F</p>
-                    </div>
+                    <?php 
+                      if( current_user_can('adventure_admin') || current_user_can('adventure_subscriber') ){?>
+
+                        <div class="col-6 mb-0">
+                           <img class="company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wa-adventure-invoice.jpg'?>">
+                           <h5 class="wander-nm"><?php echo $co_name; ?></h5>
+                           <p class="wander-address">1/2C Ballygunge Place East, Kolkata, West Bengal 700 019</p>
+                           <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
+                           <p class="wander-mail"><span>Mail:</span> indianwildtours@gmail.com</p>
+                           <p class="wander-gstin"><span>GSTIN:</span> 19AAAFW5966H1ZO</p>
+                           <p class="wander-pan"><span>PAN No.:</span> AAAFW5966H</p>
+                        </div>
+
+                      <?php }else{ ?>
+
+                        <div class="col-6 mb-0">
+                           <img class="company-logo" src="<?php echo get_template_directory_uri(). '/assets/img/wandering.png'?>">
+                           <h5 class="wander-nm"><?php echo $co_name; ?></h5>
+                           <p class="wander-address">1/2C Ballygunge Place East, Kolkata, West Bengal 700 019</p>
+                           <p class="wander-tel"><span>Ph:</span> 033 24401872</p>
+                           <p class="wander-mail"><span>Mail:</span> wandervogeltours@gmail.com</p>
+                           <p class="wander-gstin"><span>GSTIN:</span> 19AABCW5180F1Z7</p>
+                           <p class="wander-pan"><span>PAN No.:</span> AABCW5180F</p>
+                        </div>
+
+                      <?php } ?>
+
+                    
 
                     <div class="col-3 mb-0">
                       <p class="bill">BILL TO</p>
@@ -249,8 +310,7 @@
                     </div>
 
                     <div class="col mb-0">
-                      <p class="inv-no">Invoice No.: WTTPL/INV/<span></span></p>
-                      <h5 class="bill-dt">Date: <span></span></h5>
+                      <!-- <p class="inv-no">Invoice No.: WTTPL/INV/<span></span></p> -->                      
                     </div>
                   </div>
               </div>
@@ -282,7 +342,7 @@
                   <div class="terms mt-3">
                     <h5>Terms & Conditions:</h5>
                     <p><strong>Cash:</strong> Payment to be made to the cashier & printed official receipt must be obtained.</p>
-                    <p><strong>Cheque:</strong> All cheques / demand drafts in payment of bill must be crossed “A/c Payee Only” Cheque: and drawn in favour of Wandervogel Adventures.</p>
+                    <p><strong>Cheque:</strong> All cheques / demand drafts in payment of bill must be crossed “A/c Payee Only” Cheque: and drawn in favour of <?php echo $co_name; ?>.</p>
                     <p><strong>Late Payment:</strong> Interest @ 24% per annum will be charged on all outstanding bills after due date.</p>
                     <p><strong>Very lmp:</strong> It is computer generated invoice signature not mandatory. Subject to Kolkata jurisdiction only.</p>
                   </div>                  
@@ -291,6 +351,7 @@
                   <div class="invoice-generated-by mt-4">
                     <p class="float-right">Invoice Generated by: <span></span></p>
                   </div>
+                  <p class="com-name">For <span><?php echo $co_name; ?></span></p>
                 </div>
               </div>
             </div>

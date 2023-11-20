@@ -15,7 +15,7 @@
 
 
   global $wpdb;  
-
+  $tableInvoice = $wpdb->prefix . 'invoice';
   $receipt_table = $wpdb->prefix . 'receipt';
 
   $action   = isset($_GET['action'])  ? trim($_GET['action'])   : ""; // exists action
@@ -24,15 +24,16 @@
 
   $last_number = $wpdb->get_var("SELECT receipt_no  FROM $receipt_table ORDER BY receipt_no DESC LIMIT 1");
   $new_recpt_number = $last_number ? $last_number + 1 : 1000;
-  //dd($new_recpt_number);
 
   //Insert data from Database ~~~~~~~
   if ( isset( $_POST['submit-receipt']) && empty($action) ) {
+    $exist_client_name = $_POST['exist_client_name'];
+    $client_name = $_POST['client_name'];
 
     $receipt_data = array(
       'user_id'          => $_POST['current_user_id'],
       'receipt_no'       => $_POST['receipt_no'],
-      'client_name'      => $_POST['client_name'],
+      'client_name'      => $exist_client_name ? $exist_client_name : $client_name,
       'receipt_address'  => $_POST['client_address'],
       'receipt_phone'    => $_POST['client_phone'],
       'receipt_date'     => $_POST['receipt_date'],
@@ -51,7 +52,7 @@
       'package_details'  => $_POST['package_details'],
       'generated_by'    => $_POST['generated_name_receipt']
     );
-
+    
     $wpdb->insert( $receipt_table, $receipt_data );
       
     wp_redirect("receipt-list");
@@ -154,6 +155,7 @@
             $editId = $_GET['editId'];
             $row = $wpdb->prepare( "SELECT * FROM $receipt_table WHERE ID=%s", $editId );
             $receipt_details = $wpdb->get_row($row, ARRAY_A);
+            $disable_input = ( current_user_can('adventure_subscriber') || current_user_can('travel_subscriber') ) ? 'disabled' : '';
           ?>
 
             <form method="post" id="receiptValid" action="<?php echo $_SERVER['REQUEST_URI'];?>">
@@ -166,7 +168,7 @@
 
                   <div class="mb-3 col-md-3">
                     <label class="form-label" for="dt-receipt">Date of Receipt</label>
-                    <input type="text" name="receipt_date" id="dt-receipt" class="form-control" value="<?php echo $receipt_details['receipt_date']; ?>" />
+                    <input type="text" <?php echo $disable_input; ?> name="receipt_date" id="dt-receipt" class="form-control" value="<?php echo $receipt_details['receipt_date']; ?>" />
                   </div>
 
                   <div class="mb-3 col-md-6">
@@ -186,14 +188,14 @@
                   </div>
                   <div class="mb-3 col-md-3">
                     <label class="form-label" for="client-amount">Amount</label>
-                    <input type="text" name="amount" id="client-amount" class="form-control phone-mask" value="<?php echo $receipt_details['amount']; ?>"  />
+                    <input type="text" <?php echo $disable_input; ?> name="amount" id="client-amount" class="form-control phone-mask" value="<?php echo $receipt_details['amount']; ?>"  />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="mb-3 col-md-2">
                     <label class="form-label" for="payment-mode">Mode of Payment</label>
-                    <select name="payment_mode" id="receipt-payment-mode" class="form-control">
+                    <select name="payment_mode" <?php echo $disable_input; ?> id="receipt-payment-mode" class="form-control">
                       <option id="receipt-cash" <?php selected( $receipt_details['payment_mode'], 'cash' ); ?> value="cash">Cash</option>
                       <option id="receipt-cheuqe" <?php selected( $receipt_details['payment_mode'], 'cheque' ); ?> value="cheque">Cheque</option>
                       <option id="receipt-neft" <?php selected( $receipt_details['payment_mode'], 'neft' ); ?> value="neft">NEFT/Transaction</option>
@@ -203,7 +205,7 @@
 
                   <div class="col-md-2">
                     <label class="form-label" for="dt-trans-bank">Transaction Date</label>
-                    <input type="text" name="transaction_date" id="dt-trans-bank" class="form-control" placeholder="Transfer Date" value="<?php echo $receipt_details['transaction_date']; ?>" />
+                    <input type="text" <?php echo $disable_input; ?> name="transaction_date" id="dt-trans-bank" class="form-control" placeholder="Transfer Date" value="<?php echo $receipt_details['transaction_date']; ?>" />
                   </div>
                   <div class="mb-3 col-md-8">
                     <div id="receipt-cheque-fld" style="display:<?php echo ($receipt_details['payment_mode'] == 'cheque') ? 'block;' : 'none';?>">
@@ -279,17 +281,51 @@
                 <form method="post" id="receiptValid" action="<?php echo $_SERVER['REQUEST_URI'];?>">
                     <input type="hidden" name="current_user_id" value="<?php echo get_current_user_id(); ?>">
                     <div class="row">
-                      <div class="mb-3 col-md-3">
+                      <div class="mb-3 col-md-2">
                         <label class="form-label" for="basic-default-invoice-no">Receipt No.</label>
                         <input type="text" name="receipt_no" class="form-control" id="basic-default-invoice-no" value="<?php echo $new_recpt_number; ?>" />
                       </div>
-                      <div class="mb-3 col-md-3">
+
+                      <div class="mb-3 col-md-2">
                         <label class="form-label" for="dt-receipt">Date of Receipt</label>
                         <input type="text" name="receipt_date" id="dt-receipt" class="form-control" placeholder="Select a date"/>
                       </div>
+
+                      <div class="mb-3 col">
+                        <div class="custom-control custom-switch mt-4">
+                            <input type="checkbox" class="custom-control-input" id="toggleSwitch">
+                            <label class="custom-control-label" for="toggleSwitch">Existing</label>
+                        </div>
+                      </div>
+
                       <div class="mb-3 col-md-6">
                         <label class="form-label" for="client-name">Client Name</label>
-                        <input type="text" name="client_name" class="form-control" id="client-name" placeholder="Ex: John Doe" />
+                        <div id="search-container">                          
+                          <input type="text" name="client_name" class="form-control" id="client-name" placeholder="Ex: John Doe" />
+                        </div>
+                        <div id="select-container">
+                          <select class="invoice-form-data form-control" name="exist_client_name" id="custom-select">
+                            <option value=""></option>
+                            <?php
+                              $invoice_details = $wpdb->get_results( "SELECT * FROM $tableInvoice", ARRAY_A);
+                              $invoice_details = array_map(function($item){
+                                $item['table'] = 'invoice';
+                                return $item ;
+                              }, $invoice_details) ;
+
+                              $receipt_details = $wpdb->get_results( "SELECT * FROM $tableReceipt", ARRAY_A);
+                              $receipt_details = array_map(function($item){
+                                $item['table'] = 'receipt';
+                                return $item ;
+                              }, $receipt_details) ;
+
+                              $all_details = array_merge( $invoice_details, $receipt_details );
+
+                              foreach ($all_details as $name) { ?>                                    
+                                <option id="<?php echo $name['table'].'_'.$name['ID']; ?>"><?php echo $name['client_name']; ?></option>
+                              <?php } ?>
+                          </select>
+                        </div>
                       </div>
                     </div>
 

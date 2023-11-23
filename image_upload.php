@@ -163,3 +163,61 @@ jQuery(document).ready(function ($) {
 });
 
 /*This is a basic example, and you may need to enhance it based on your specific requirements. Also, make sure to add proper security measures and error handling in your functions to ensure the security and reliability of your application.*/
+
+
+
+
+
+
+
+
+/*create a functionality to upload user avatar image from fronted in wordpress?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Certainly! To create functionality for uploading a user avatar image from the frontend in WordPress, you can follow these general steps. Please note that this involves creating a custom form and processing the uploaded image.
+    Create a Form on the Frontend:
+    Create a form on the frontend where users can upload their avatar image. You can use HTML and perhaps some JavaScript for a more interactive experience. Make sure to include the necessary fields, including the file input for the image.
+*/
+<form id="avatar-upload-form" method="post" enctype="multipart/form-data">
+    <input type="file" name="avatar" accept="image/*" required>
+    <input type="submit" value="Upload Avatar">
+</form>
+
+/*Handle Form Submission in WordPress:
+Use WordPress hooks to handle form submission. You can use the wp_handle_upload function to handle file uploads.*/
+
+// Add this code to your theme's functions.php file or create a custom plugin
+
+add_action('init', 'handle_avatar_upload');
+
+function handle_avatar_upload() {
+    if (isset($_FILES['avatar'])) {
+        $uploadedfile = $_FILES['avatar'];
+        $upload_overrides = array('test_form' => false);
+
+        $movefile = wp_handle_upload($uploadedfile, $upload_overrides);
+
+        if ($movefile && !isset($movefile['error'])) {
+            // File successfully uploaded, now update user meta with the file URL
+            $user_id = get_current_user_id();
+            update_user_meta($user_id, 'avatar', $movefile['url']);
+        } else {
+            // Handle error
+            echo $movefile['error'];
+        }
+    }
+}
+
+/*Display User Avatar:
+After uploading the avatar, you can display it on the frontend by fetching the user meta information.*/
+
+// Display the user avatar
+$user_id = get_current_user_id();
+$avatar_url = get_user_meta($user_id, 'avatar', true);
+
+if ($avatar_url) {
+    echo '<img src="' . esc_url($avatar_url) . '" alt="User Avatar">';
+}
+
+/*    Style your form and the avatar display as needed using CSS.
+Remember that this is a simplified example, and you may want to enhance security and error handling based on your specific needs. Additionally, you might want to add nonce checks and implement security measures to prevent unauthorized access.
+*/
